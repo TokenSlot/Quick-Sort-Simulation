@@ -115,7 +115,7 @@ public class QuickSort extends JFrame {
         inputField.setBounds(475, 314, 90, 24);
         inputField.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                inputBtnActionPerformed(evt);
+                // inputBtnActionPerformed(evt);
             }
         });
 
