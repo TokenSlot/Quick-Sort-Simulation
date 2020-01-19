@@ -37,11 +37,7 @@ public class QuickSort extends JFrame {
             setIconImage(img);
         } catch (Exception e) {}
 
-        setTitle("Sanic's Quickie Sort: Gotta go fast!");
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(820, 380);
-        setResizable(false);
-        setLayout(null);
+
 
         indexLabel = new JLabel[10];
 
@@ -172,7 +168,7 @@ public class QuickSort extends JFrame {
     }
 
     /**
-     * Plays or Stops the animation
+     * Plays or stops the animation
      */
     private void playBtnItemStateChanged(ItemEvent evt) {
         if (evt.getStateChange() == ItemEvent.SELECTED) {
@@ -184,7 +180,7 @@ public class QuickSort extends JFrame {
 
     /**
      * Initializes the array containing the values to be sorted
-     * @param arr
+     * @param arr array to be sorted
      */
     private void generateArray(int[] arr) {
         Random rand = new Random();
