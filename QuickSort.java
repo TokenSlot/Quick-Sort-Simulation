@@ -1,10 +1,10 @@
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import javax.swing.UIManager.LookAndFeelInfo;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import javax.swing.Timer;
+import javax.swing.event.*;
 import java.util.*;
+import javax.swing.UIManager.LookAndFeelInfo;
 
 public class QuickSort extends JFrame {
 
@@ -18,6 +18,8 @@ public class QuickSort extends JFrame {
     private JButton inputBtn, randBtn, randAllBtn;
     private JComboBox<Integer> indexPicker;
     private JTextField inputField;
+
+    private Timer tm;
 
     private int[] arr;
 
@@ -36,8 +38,6 @@ public class QuickSort extends JFrame {
             Image img = kit.createImage(url);
             setIconImage(img);
         } catch (Exception e) {}
-
-
 
         indexLabel = new JLabel[10];
 
@@ -84,11 +84,11 @@ public class QuickSort extends JFrame {
         passLabel = new JLabel("Pass: 1");
         passLabel.setBounds(10, 290, 43, 16);
 
-        speedLabel = new JLabel("Speed: 0");
-        speedLabel.setBounds(63, 290, 60, 16);
+        speedLabel = new JLabel("Speed: x0");
+        speedLabel.setBounds(63, 290, 65, 16);
 
         speedSlider = new JSlider();
-        speedSlider.setMaximum(69);
+        speedSlider.setMaximum(2);
         speedSlider.setValue(0);
         speedSlider.setBounds(10, 310, 200, 30);
         speedSlider.addChangeListener(new ChangeListener(){
@@ -113,15 +113,35 @@ public class QuickSort extends JFrame {
 
         inputField = new JTextField();
         inputField.setBounds(475, 314, 90, 24);
+        inputField.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                inputBtnActionPerformed(evt);
+            }
+        });
 
         inputBtn = new JButton("Input");
         inputBtn.setBounds(568, 310, 60, 30);
+        inputBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                inputBtnActionPerformed(evt);
+            }
+        });
 
         randBtn = new JButton("Random");
         randBtn.setBounds(631, 310, 77, 30);
+        randBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                randBtnActionPerformed(evt);
+            }
+        });
 
         randAllBtn = new JButton("Random All");
         randAllBtn.setBounds(711, 310, 94, 30);
+        randAllBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                randAllBtnActionPerformed(evt);
+            }
+        });
 
         add(lowLabel);
         add(equalLabel);
@@ -135,27 +155,53 @@ public class QuickSort extends JFrame {
         add(inputBtn);
         add(randBtn);
         add(randAllBtn);
+
+
+        tm = new Timer(1, new ActionListener(){
+            public void actionPerformed(ActionEvent evt) {
+                timerActionPerformed(evt);
+            }
+        });
+    }
+
+    /**
+     * Initializes the array containing the values to be sorted
+     * @param arr array to be sorted
+     */
+    private void generateArray(int[] arr) {
+        Random rand = new Random();
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = rand.nextInt(Integer.MAX_VALUE);
+        }
     }
 
     /**
      * Controls the speed of the animation
      */
     private void speedSliderStateChanged() {
-        speedLabel.setText("Speed: " + speedSlider.getValue());
+        speedLabel.setText("Speed: x" + speedSlider.getValue());
         if (speedSlider.getValue() > 0) {
             playBtn.setText("Stop");
             playBtn.setSelected(true);
 
-            // Disables the option to change the values
-            // of the array when the animation is playing.
+            tm.setDelay(speedSlider.getValue());
+            tm.start();
+
+            // Resets the input forms and disables the option
+            // to change the values of the array when
+            // the animation is playing
             indexPicker.setEnabled(false);
             inputField.setEnabled(false);
             inputBtn.setEnabled(false);
             randBtn.setEnabled(false);
             randAllBtn.setEnabled(false);
+            indexPicker.setSelectedIndex(0);
+            inputField.setText("");
         } else if (speedSlider.getValue() == 0) {
             playBtn.setText("Play");
             playBtn.setSelected(false);
+
+            tm.stop();
 
             // Enables the option to change the values
             // of the array when the animation is not playing.
@@ -169,6 +215,7 @@ public class QuickSort extends JFrame {
 
     /**
      * Plays or stops the animation
+     * @param evt Used to get the state of the toggle button
      */
     private void playBtnItemStateChanged(ItemEvent evt) {
         if (evt.getStateChange() == ItemEvent.SELECTED) {
@@ -178,14 +225,68 @@ public class QuickSort extends JFrame {
         }
     }
 
+    private void timerActionPerformed(ActionEvent evt) {
+        arrLabel[0].setBounds(arrLabel[0].getX(), arrLabel[0].getY()+1, 70, 30);
+    }
+
     /**
-     * Initializes the array containing the values to be sorted
-     * @param arr array to be sorted
+     * Get input from user and change the value in the array base on the selected index
      */
-    private void generateArray(int[] arr) {
-        Random rand = new Random();
-        for (int i = 0; i < arr.length; i++) {
-            arr[i] = rand.nextInt(Integer.MAX_VALUE);
+    private void inputBtnActionPerformed(ActionEvent evt) {
+        int index = indexPicker.getSelectedIndex();
+        int value = Integer.parseInt(arrLabel[index].getText());
+
+        if (!"".equals(inputField.getText())) {
+            try {
+                value = Integer.parseInt(inputField.getText());
+
+                if (value >= 0) {
+                    arr[index] = value;
+                    arrLabel[index].setText(arr[index] + "");
+                    inputField.setText("");
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                    "Negative numbers are not accepted.",
+                    "Invalid Input",
+                    JOptionPane.WARNING_MESSAGE);
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this,
+                    inputField.getText() + " is not an integer.",
+                    "Invalid Input: " + e,
+                    JOptionPane.ERROR_MESSAGE);
+            }
+
+            validate();
+            repaint();
         }
+    }
+
+    /**
+     * Randomizes the value in the array base on the selected index
+     */
+    private void randBtnActionPerformed(ActionEvent evt) {
+        Random rand = new Random();
+        int index = indexPicker.getSelectedIndex();
+
+        arr[index] = rand.nextInt(Integer.MAX_VALUE);
+        arrLabel[index].setText(arr[index] + "");
+
+        validate();
+        repaint();
+    }
+
+    /**
+     * Randomizes all the values in the array
+     */
+    private void randAllBtnActionPerformed(ActionEvent evt) {
+        generateArray(arr);
+
+        for (int i = 0; i < 10; i++) {
+            arrLabel[i].setText(arr[i] + "");
+        }
+
+        validate();
+        repaint();
     }
 }
