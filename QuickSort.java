@@ -21,7 +21,12 @@ public class QuickSort extends JFrame {
 
     private Timer tm;
 
-    private int[] arr;
+    private Item[] arr;
+    private Item[] orig; //used for resetting the ui
+
+    public Item[] ts;
+
+    private Queue<AnimQ> animq;
 
     public QuickSort() {
 
@@ -39,11 +44,13 @@ public class QuickSort extends JFrame {
             setIconImage(img);
         } catch (Exception e) {}
 
+        animq = new LinkedList<>();
+
         indexLabel = new JLabel[10];
 
         for (int i = 0; i < 10; i++) {
             indexLabel[i] = new JLabel(i + "");
-            indexLabel[i].setFont(new Font("Dialog", 1, 10));
+            indexLabel[i].setFont(new Font("Dialog", 1, 20));
             indexLabel[i].setHorizontalAlignment(SwingConstants.CENTER);
             indexLabel[i].setBorder(BorderFactory.createLineBorder(new Color(0,0,0)));
             indexLabel[i].setBounds(10+(80*i), 10, 70, 30);
@@ -51,12 +58,16 @@ public class QuickSort extends JFrame {
         }
 
         arrLabel = new JLabel[10];
-        arr = new int[10];
-        generateArray(arr);
+        arr = new Item[10];
+        arr = generateArray();
+
+        orig = new Item[10];
+        orig = copyArray(arr, orig);
 
         for (int i = 0; i < 10; i++) {
-            arrLabel[i] = new JLabel(arr[i] + "");
-            arrLabel[i].setFont(new Font("Dialog", 1, 10));
+            arrLabel[i] = new JLabel(arr[i].getValue() + "");
+            int len = arrLabel[i].getText().length();
+            arrLabel[i].setFont(new Font("Dialog", 1, 20-len));
             arrLabel[i].setHorizontalAlignment(SwingConstants.CENTER);
             arrLabel[i].setBorder(BorderFactory.createLineBorder(new Color(0,0,0)));
             arrLabel[i].setBounds(10+(80*i), 50, 70, 30);
@@ -115,7 +126,8 @@ public class QuickSort extends JFrame {
         inputField.setBounds(475, 314, 90, 24);
         inputField.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                // inputBtnActionPerformed(evt); not working properly
+                inputBtnActionPerformed(evt);
+                increasePicker();
             }
         });
 
@@ -156,7 +168,6 @@ public class QuickSort extends JFrame {
         add(randBtn);
         add(randAllBtn);
 
-
         tm = new Timer(1, new ActionListener(){
             public void actionPerformed(ActionEvent evt) {
                 timerActionPerformed(evt);
@@ -165,18 +176,92 @@ public class QuickSort extends JFrame {
     }
 
     /**
-     * Initializes the array containing the values to be sorted
-     * @param arr array to be sorted
+     * Takes the middle element as pivot, places it the right position
+     * places smaller values to the left of the pivot and adds them to
+     * a an AnimQ's low list and all equal or greater values are placed
+     * to the right of the pivot but equal values are added to an AnimQ's
+     * equal list and the greater values are added to the AnimQ's high list.
+     * This function uses Hoare's partition scheme.
+     * @param arr array to be partitioned
+     * @param low starting index of the array
+     * @param high ending index of the array
+     * @return the partitioning index
      */
-    private void generateArray(int[] arr) {
-        Random rand = new Random();
-        for (int i = 0; i < arr.length; i++) {
-            arr[i] = rand.nextInt(Integer.MAX_VALUE);
+    private int partition(Item[] arr, int low, int high) {
+        int pi = low+(high-low)/2;
+        int pivot = arr[pi].getValue();
+        int i = low - 1, j = high + 1;
+
+        AnimQ q = new AnimQ(arr, low, high, pi);
+        animq.add(q);
+        while (true) {
+
+            do {
+                i++;
+            } while (arr[i].getValue() < pivot);
+
+            do {
+                j--;
+            } while (arr[j].getValue() > pivot);
+
+            if (i >= j) {
+                return j;
+            }
+
+            Item temp = new Item(arr[i].getIndex(), arr[i].getValue());
+            arr[i] = arr[j];
+            arr[j] = temp;
         }
     }
 
     /**
-     * Controls the speed of the animation
+     * Main function that implements the Quick Sort Algorithm.
+     * @param arr array to be sorted
+     * @param low starting index of the array
+     * @param high ending index of the array
+     * @return sorted array
+     */
+    public void quickSort(Item[] arr, int low, int high) {
+        if (low < high) {
+            int pi = partition(arr, low, high);
+
+            quickSort(arr, low, pi - 1);
+            quickSort(arr, pi + 1, high);
+        }
+    }
+
+    /**
+     * Copies array a to array b
+     * @param a base array
+     * @param b array copied from array a
+     * @return copied array
+     */
+    private Item[] copyArray(Item[] a, Item[] b) {
+        for (int i = 0; i < b.length; i++) {
+            b[i] = new Item(i, a[i].getValue());
+        }
+
+        return b;
+    }
+
+    /**
+     * Generates an array with random values from 0 to Integer.MAX_VALUE.
+     * @return generated array
+     */
+    private Item[] generateArray() {
+        Random rand = new Random();
+        Item arr[] = new Item[10];
+
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = new Item(i, rand.nextInt(Integer.MAX_VALUE));
+            // arr[i] = new Item(i, rand.nextInt(10));
+        }
+
+        return arr;
+    }
+
+    /**
+     * Controls the speed of the animation.
      */
     private void speedSliderStateChanged() {
         speedLabel.setText("Speed: x" + speedSlider.getValue());
@@ -184,12 +269,13 @@ public class QuickSort extends JFrame {
             playBtn.setText("Stop");
             playBtn.setSelected(true);
 
-            tm.setDelay(speedSlider.getValue());
-            tm.start();
+            // tm.setDelay(speedSlider.getValue());
+            // tm.start();
 
-            // Resets the input forms and disables the option
-            // to change the values of the array when
-            // the animation is playing
+            // testSort();
+
+            // Resets the input forms and disables the option to change
+            // the values of the array when the animation is playing.
             indexPicker.setEnabled(false);
             inputField.setEnabled(false);
             inputBtn.setEnabled(false);
@@ -214,7 +300,7 @@ public class QuickSort extends JFrame {
     }
 
     /**
-     * Plays or stops the animation
+     * Plays or stops the animation.
      * @param evt Used to get the state of the toggle button
      */
     private void playBtnItemStateChanged(ItemEvent evt) {
@@ -226,11 +312,13 @@ public class QuickSort extends JFrame {
     }
 
     private void timerActionPerformed(ActionEvent evt) {
-        arrLabel[0].setBounds(arrLabel[0].getX(), arrLabel[0].getY()+1, 70, 30);
+        for (int i = 0; i < 10; i++) {
+            arrLabel[i].setBounds(arrLabel[i].getX(), arrLabel[i].getY()+1, 70, 30);
+        }
     }
 
     /**
-     * Get input from user and change the value in the array base on the selected index
+     * Get input from user and change the value in the array base on the selected index.
      */
     private void inputBtnActionPerformed(ActionEvent evt) {
         int index = indexPicker.getSelectedIndex();
@@ -241,8 +329,10 @@ public class QuickSort extends JFrame {
                 value = Integer.parseInt(inputField.getText());
 
                 if (value >= 0) {
-                    arr[index] = value;
-                    arrLabel[index].setText(arr[index] + "");
+                    arr[index].setValue(value);
+                    arrLabel[index].setText(arr[index].getValue() + "");
+                    int len = arrLabel[index].getText().length();
+                    arrLabel[index].setFont(new Font("Dialog", 1, 20-len));
                     inputField.setText("");
                 } else {
                     JOptionPane.showMessageDialog(this,
@@ -256,37 +346,78 @@ public class QuickSort extends JFrame {
                     "Invalid Input: " + e,
                     JOptionPane.ERROR_MESSAGE);
             }
-
             validate();
             repaint();
         }
     }
 
     /**
-     * Randomizes the value in the array base on the selected index
+     * This function increases the index picker's value if
+     * you press enter instead of clicking input.
+     */
+    private void increasePicker() {
+        indexPicker.setSelectedIndex((indexPicker.getSelectedIndex()+1)%10);
+    }
+
+    /**
+     * Randomizes the value in the array base on the selected index.
      */
     private void randBtnActionPerformed(ActionEvent evt) {
         Random rand = new Random();
         int index = indexPicker.getSelectedIndex();
 
-        arr[index] = rand.nextInt(Integer.MAX_VALUE);
-        arrLabel[index].setText(arr[index] + "");
+        arr[index].setValue(rand.nextInt(Integer.MAX_VALUE));
+
+        arrLabel[index].setText(arr[index].getValue() + "");
+        int len = arrLabel[index].getText().length();
+        arrLabel[index].setFont(new Font("Dialog", 1, 20-len));
 
         validate();
         repaint();
     }
 
     /**
-     * Randomizes all the values in the array
+     * Randomizes all the values in the array.
      */
     private void randAllBtnActionPerformed(ActionEvent evt) {
-        generateArray(arr);
+        arr = generateArray();
 
         for (int i = 0; i < 10; i++) {
-            arrLabel[i].setText(arr[i] + "");
+            arrLabel[i].setText(arr[i].getValue() + "");
+            int len = arrLabel[i].getText().length();
+            arrLabel[i].setFont(new Font("Dialog", 1, 20-len));
         }
+
+        orig = copyArray(arr, orig);
 
         validate();
         repaint();
     }
+
+    /**
+     * Test Sort
+     */
+    // private void testSort() {
+    //     ts = new Item[10];
+    //     ts = copyArray(arr, ts);
+    //     quickSort(ts, 0, ts.length-1);
+
+    //     for (Item x : orig) {
+    //         System.out.print(x + ", ");
+    //     }
+    //     System.out.println("");
+
+    //     for (Item x : ts) {
+    //         System.out.print(x + ", ");
+    //     }
+    //     System.out.println("");
+
+    //     int count = 1;
+    //     for (AnimQ q : animq) {
+    //         System.out.println("Pass "+ (count++) +": Pivot = " + q.getPivot());
+    //         System.out.println(q.getLowList());
+    //         System.out.println(q.getEqualList());
+    //         System.out.println(q.getHighList());
+    //     }
+    // }
 }
