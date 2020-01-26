@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 
-public class AnimQ {
+public class Preview {
 
     private ArrayList<Item> lowList;
     private ArrayList<Item> equalList;
@@ -13,7 +13,7 @@ public class AnimQ {
      * @param arr array to be partitioned
      * @param pi the pivot's index
      */
-    public AnimQ(Item[] arr, int low, int high, int pi) {
+    public Preview(Item[] arr, int low, int high, int pi) {
         pivot = arr[pi];
 
         lowList = new ArrayList<>();
@@ -21,36 +21,36 @@ public class AnimQ {
         highList = new ArrayList<>();
 
         // Testing purposes
-        // for (Item x : arr) {
-        //     System.out.print(x + ", ");
-        // }
-        // System.out.println("\n" + low + " " + high);
-        // for (int i = low; i <= high; i++) {
-        //     System.out.print(pi + " - ");
-        //     System.out.print(arr[i]);
-        //     if (arr[i].getValue() < arr[pi].getValue()) {
-        //         System.out.print(" < ");
-        //         lowList.add(arr[i]);
-        //     } else if (arr[i].getValue() > arr[pi].getValue()) {
-        //         System.out.print(" > ");
-        //         highList.add(arr[i]);
-        //     } else {
-        //         System.out.print(" = ");
-        //         equalList.add(arr[i]);
-        //     }
-        //     System.out.println(arr[pi]);
-        // }
-        // System.out.println("");
-
+        for (Item x : arr) {
+            System.out.print(x + ", ");
+        }
+        System.out.println("\n" + low + " " + high);
         for (int i = low; i <= high; i++) {
+            System.out.print(pi + " - ");
+            System.out.print(arr[i]);
             if (arr[i].getValue() < arr[pi].getValue()) {
+                System.out.print(" < ");
                 lowList.add(arr[i]);
             } else if (arr[i].getValue() > arr[pi].getValue()) {
+                System.out.print(" > ");
                 highList.add(arr[i]);
             } else {
-                equalList.add(arr[i]);
+                System.out.print(" = ");
+                if (!arr[i].equals(pivot)) equalList.add(arr[i]);
             }
+            System.out.println(arr[pi]);
         }
+        System.out.println("");
+
+        // for (int i = low; i <= high; i++) {
+        //     if (arr[i].getValue() < arr[pi].getValue()) {
+        //         lowList.add(arr[i]);
+        //     } else if (arr[i].getValue() > arr[pi].getValue()) {
+        //         highList.add(arr[i]);
+        //     } else {
+        //         if (!arr[i].equals(pivot)) equalList.add(arr[i]);
+        //     }
+        // }
     }
 
     public ArrayList<Item> getLowList() {

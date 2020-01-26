@@ -1,38 +1,58 @@
 import java.awt.*;
 import java.awt.event.*;
-import javax.swing.*;
+import java.util.ArrayList;
+import java.util.Random;
+
+import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.Timer;
-import javax.swing.event.*;
-import java.util.*;
+import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
+import javax.swing.event.*;
 
 public class QuickSort extends JFrame {
 
     private static final long serialVersionUID = 1043813624503542032L;
 
-    private JLabel[] indexLabel;
-    private JLabel[] arrLabel;
-    private JLabel lowLabel, equalLabel, greatLabel, passLabel, speedLabel;
-    private JSlider speedSlider;
-    private JToggleButton playBtn;
-    private JButton inputBtn, randBtn, randAllBtn;
+    private JPanel optionsPanel;
+    private JPanel inputPanel, speedPanel, previewPanel;
     private JComboBox<Integer> indexPicker;
     private JTextField inputField;
+    private JButton addBtn, inputBtn, randBtn, randAllBtn;
+    private JSlider speedSlider;
+    private JLabel speedLabel, lessLabel, equalLabel, moreLabel;
+
+    private JPanel boardPanel;
+    private JLabel[] arrLabel;
+
+    private JPanel controlsPanel;
+    private JPanel mediaPanel, infoPanel;
+    private JLabel compareLabel, pivotLabel, passLabel;
+    private JButton startBtn, rewindBtn, playBtn, fastForwardBtn, endBtn;
+    private JSlider passSlider;
 
     private Timer tm;
 
     private Item[] arr;
-    private Item[] orig; //used for resetting the ui
+    private Item[] orig; // used for resetting the ui
+    private Item[] sorted;
 
-    public Item[] ts;
-
-    private Queue<AnimQ> animq;
+    private ArrayList<Preview> previewq;
 
     public QuickSort() {
 
         try {
             // Changes the theme of the UI to nimbus
-            for (LookAndFeelInfo info:UIManager.getInstalledLookAndFeels())  {
+            for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
                     UIManager.setLookAndFeel(info.getClassName());
                     break;
@@ -44,18 +64,102 @@ public class QuickSort extends JFrame {
             setIconImage(img);
         } catch (Exception e) {}
 
-        animq = new LinkedList<>();
+        setTitle("Sanic's Quickie Sort: Gotta go fast!");
+        setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
+        setResizable(false);
+        setSize(810, 510);
+        setLocationRelativeTo(null);
 
-        indexLabel = new JLabel[10];
+        optionsPanel = new JPanel(new BorderLayout());
 
-        for (int i = 0; i < 10; i++) {
-            indexLabel[i] = new JLabel(i + "");
-            indexLabel[i].setFont(new Font("Dialog", 1, 20));
-            indexLabel[i].setHorizontalAlignment(SwingConstants.CENTER);
-            indexLabel[i].setBorder(BorderFactory.createLineBorder(new Color(0,0,0)));
-            indexLabel[i].setBounds(10+(80*i), 10, 70, 30);
-            add(indexLabel[i]);
-        }
+        inputPanel = new JPanel();
+
+        indexPicker = new JComboBox<>();
+        indexPicker.setModel(new DefaultComboBoxModel<Integer>(new Integer[] {0,1,2,3,4,5,6,7,8,9}));
+
+        inputField = new JTextField("", 16);
+        inputField.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                inputBtnActionPerformed(evt);
+                increasesIndexPicker();
+            }
+        });
+
+        addBtn = new JButton("Add");
+        addBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                inputBtnActionPerformed(evt);
+                increasesIndexPicker();
+            }
+        });
+
+        inputBtn = new JButton("Insert");
+        inputField.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                inputBtnActionPerformed(evt);
+            }
+        });
+
+        randBtn = new JButton("Random");
+        randBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                randBtnActionPerformed(evt);
+            }
+        });
+
+        randAllBtn = new JButton("Random All");
+        randAllBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                randAllBtnActionPerformed(evt);
+            }
+        });
+
+        inputPanel.add(indexPicker);
+        inputPanel.add(inputField);
+        inputPanel.add(addBtn);
+        inputPanel.add(inputBtn);
+        inputPanel.add(randBtn);
+        inputPanel.add(randAllBtn);
+
+        speedPanel = new JPanel();
+
+        speedLabel = new JLabel("Speed x0");
+
+        speedSlider = new JSlider();
+        speedSlider.setMaximum(5);
+        speedSlider.setValue(0);
+        speedSlider.setInverted(true);
+        speedSlider.addChangeListener(new ChangeListener(){
+            @Override
+            public void stateChanged(ChangeEvent evt) {
+                speedSliderStateChanged();
+            }
+        });
+
+        speedPanel.add(speedLabel);
+        speedPanel.add(speedSlider);
+
+        previewPanel = new JPanel();
+
+        previewq = new ArrayList<>();
+
+        lessLabel = new JLabel();
+        equalLabel = new JLabel();
+        moreLabel = new JLabel();
+
+        previewPanel.add(lessLabel);
+        previewPanel.add(equalLabel);
+        previewPanel.add(moreLabel);
+
+        optionsPanel.add(inputPanel, BorderLayout.CENTER);
+        optionsPanel.add(speedPanel, BorderLayout.EAST);
+        optionsPanel.add(previewPanel, BorderLayout.SOUTH);
+
+        boardPanel = new JPanel(null);
+        boardPanel.setBackground(new java.awt.Color(51, 51, 51));
+        boardPanel.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         arrLabel = new JLabel[10];
         arr = new Item[10];
@@ -70,117 +174,68 @@ public class QuickSort extends JFrame {
             arrLabel[i].setFont(new Font("Dialog", 1, 20-len));
             arrLabel[i].setHorizontalAlignment(SwingConstants.CENTER);
             arrLabel[i].setBorder(BorderFactory.createLineBorder(new Color(0,0,0)));
-            arrLabel[i].setBounds(10+(80*i), 50, 70, 30);
-            add(arrLabel[i]);
+            arrLabel[i].setBackground(new java.awt.Color(153, 153, 153));
+            arrLabel[i].setForeground(new java.awt.Color(0, 0, 0));
+            arrLabel[i].setOpaque(true);
+            arrLabel[i].setBounds(55+(70*i), 110, 70, 100);
+            boardPanel.add(arrLabel[i]);
         }
 
-        lowLabel = new JLabel("<");
-        lowLabel.setFont(new Font("Dialog", 0, 24));
-        lowLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        lowLabel.setBorder(BorderFactory.createLineBorder(new Color(0,0,0)));
-        lowLabel.setBounds(10, 170, 70, 30);
+        controlsPanel = new JPanel(new BorderLayout());
 
-        equalLabel = new JLabel("=");
-        equalLabel.setFont(new Font("Dialog", 0, 24));
-        equalLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        equalLabel.setBorder(BorderFactory.createLineBorder(new Color(0,0,0)));
-        equalLabel.setBounds(10, 210, 70, 30);
+        infoPanel = new JPanel(new BorderLayout());
+        compareLabel = new JLabel("-");
+        compareLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        pivotLabel = new JLabel("-");
+        pivotLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        passLabel = new JLabel("-");
+        passLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
-        greatLabel = new JLabel(">");
-        greatLabel.setFont(new Font("Dialog", 0, 24));
-        greatLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        greatLabel.setBorder(BorderFactory.createLineBorder(new Color(0,0,0)));
-        greatLabel.setBounds(10, 250, 70, 30);
+        infoPanel.add(compareLabel, BorderLayout.NORTH);
+        infoPanel.add(pivotLabel, BorderLayout.CENTER);
+        infoPanel.add(passLabel, BorderLayout.SOUTH);
 
-        passLabel = new JLabel("Pass: 1");
-        passLabel.setBounds(10, 290, 43, 16);
+        mediaPanel = new JPanel();
 
-        speedLabel = new JLabel("Speed: x0");
-        speedLabel.setBounds(63, 290, 65, 16);
+        startBtn = new JButton("|<");
 
-        speedSlider = new JSlider();
-        speedSlider.setMaximum(2);
-        speedSlider.setValue(0);
-        speedSlider.setBounds(10, 310, 200, 30);
-        speedSlider.addChangeListener(new ChangeListener(){
-            @Override
-            public void stateChanged(ChangeEvent evt) {
-                speedSliderStateChanged();
-            }
-        });
+        rewindBtn = new JButton("<<");
 
-        playBtn = new JToggleButton("Play");
-        playBtn.setBounds(213, 310, 60, 30);
+        playBtn = new JButton("I>");
         playBtn.addItemListener(new ItemListener() {
-            @Override
-            public void itemStateChanged(ItemEvent evt) {
+        @Override
+        public void itemStateChanged(ItemEvent evt) {
                 playBtnItemStateChanged(evt);
             }
         });
 
-        indexPicker = new JComboBox<>();
-        indexPicker.setModel(new DefaultComboBoxModel<Integer>(new Integer[] {0,1,2,3,4,5,6,7,8,9}));
-        indexPicker.setBounds(432, 313, 40, 26);
+        fastForwardBtn = new JButton(">>");
 
-        inputField = new JTextField();
-        inputField.setBounds(475, 314, 90, 24);
-        inputField.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                inputBtnActionPerformed(evt);
-                increasePicker();
-            }
-        });
+        endBtn = new JButton(">|");
 
-        inputBtn = new JButton("Input");
-        inputBtn.setBounds(568, 310, 60, 30);
-        inputBtn.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                inputBtnActionPerformed(evt);
-            }
-        });
+        mediaPanel.add(startBtn);
+        mediaPanel.add(rewindBtn);
+        mediaPanel.add(playBtn);
+        mediaPanel.add(fastForwardBtn);
+        mediaPanel.add(endBtn);
 
-        randBtn = new JButton("Random");
-        randBtn.setBounds(631, 310, 77, 30);
-        randBtn.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                randBtnActionPerformed(evt);
-            }
-        });
+        passSlider = new JSlider();
 
-        randAllBtn = new JButton("Random All");
-        randAllBtn.setBounds(711, 310, 94, 30);
-        randAllBtn.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent evt) {
-                randAllBtnActionPerformed(evt);
-            }
-        });
+        controlsPanel.add(infoPanel, BorderLayout.NORTH);
+        controlsPanel.add(mediaPanel, BorderLayout.WEST);
+        controlsPanel.add(passSlider, BorderLayout.CENTER);
 
-        add(lowLabel);
-        add(equalLabel);
-        add(greatLabel);
-        add(passLabel);
-        add(speedLabel);
-        add(speedSlider);
-        add(playBtn);
-        add(indexPicker);
-        add(inputField);
-        add(inputBtn);
-        add(randBtn);
-        add(randAllBtn);
-
-        tm = new Timer(1, new ActionListener(){
-            public void actionPerformed(ActionEvent evt) {
-                timerActionPerformed(evt);
-            }
-        });
+        add(optionsPanel, BorderLayout.NORTH);
+        add(boardPanel, BorderLayout.CENTER);
+        add(controlsPanel, BorderLayout.SOUTH);
     }
 
     /**
      * Takes the middle element as pivot, places it the right position
      * places smaller values to the left of the pivot and adds them to
-     * a an AnimQ's low list and all equal or greater values are placed
-     * to the right of the pivot but equal values are added to an AnimQ's
-     * equal list and the greater values are added to the AnimQ's high list.
+     * a an previewq's low list and all equal or greater values are placed
+     * to the right of the pivot but equal values are added to an previewq's
+     * equal list and the greater values are added to the previewq's high list.
      * This function uses Hoare's partition scheme.
      * @param arr array to be partitioned
      * @param low starting index of the array
@@ -192,8 +247,8 @@ public class QuickSort extends JFrame {
         int pivot = arr[pi].getValue();
         int i = low - 1, j = high + 1;
 
-        AnimQ q = new AnimQ(arr, low, high, pi);
-        animq.add(q);
+        Preview q = new Preview(arr, low, high, pi);
+        previewq.add(q);
         while (true) {
 
             do {
@@ -266,32 +321,32 @@ public class QuickSort extends JFrame {
     private void speedSliderStateChanged() {
         speedLabel.setText("Speed: x" + speedSlider.getValue());
         if (speedSlider.getValue() > 0) {
-            playBtn.setText("Stop");
+            playBtn.setText("||");
             playBtn.setSelected(true);
 
             // tm.setDelay(speedSlider.getValue());
             // tm.start();
 
-            // testSort();
-
             // Resets the input forms and disables the option to change
             // the values of the array when the animation is playing.
             indexPicker.setEnabled(false);
             inputField.setEnabled(false);
+            addBtn.setEnabled(false);
             inputBtn.setEnabled(false);
             randBtn.setEnabled(false);
             randAllBtn.setEnabled(false);
             indexPicker.setSelectedIndex(0);
             inputField.setText("");
         } else if (speedSlider.getValue() == 0) {
-            playBtn.setText("Play");
+            playBtn.setText("I>");
             playBtn.setSelected(false);
 
-            tm.stop();
+            // tm.stop();
 
             // Enables the option to change the values
             // of the array when the animation is not playing.
             indexPicker.setEnabled(true);
+            addBtn.setEnabled(true);
             inputField.setEnabled(true);
             inputBtn.setEnabled(true);
             randBtn.setEnabled(true);
@@ -330,10 +385,12 @@ public class QuickSort extends JFrame {
 
                 if (value >= 0) {
                     arr[index].setValue(value);
+                    orig[index].setValue(value);
                     arrLabel[index].setText(arr[index].getValue() + "");
                     int len = arrLabel[index].getText().length();
                     arrLabel[index].setFont(new Font("Dialog", 1, 20-len));
                     inputField.setText("");
+                    generateSortedArray();
                 } else {
                     JOptionPane.showMessageDialog(this,
                     "Negative numbers are not accepted.",
@@ -346,18 +403,20 @@ public class QuickSort extends JFrame {
                     "Invalid Input: " + e,
                     JOptionPane.ERROR_MESSAGE);
             }
+
+            previewq.clear();
             validate();
             repaint();
         }
     }
 
     /**
-     * This function increases the index picker's value if
-     * you press enter instead of clicking input.
+     * This function increases the index picker's value by 1 or resets it to 0 if its 9.
      */
-    private void increasePicker() {
+    private void increasesIndexPicker() {
         indexPicker.setSelectedIndex((indexPicker.getSelectedIndex()+1)%10);
     }
+
 
     /**
      * Randomizes the value in the array base on the selected index.
@@ -366,12 +425,16 @@ public class QuickSort extends JFrame {
         Random rand = new Random();
         int index = indexPicker.getSelectedIndex();
 
-        arr[index].setValue(rand.nextInt(Integer.MAX_VALUE));
+        int value = rand.nextInt(Integer.MAX_VALUE);
+        arr[index].setValue(value);
+        orig[index].setValue(value);
 
         arrLabel[index].setText(arr[index].getValue() + "");
         int len = arrLabel[index].getText().length();
         arrLabel[index].setFont(new Font("Dialog", 1, 20-len));
 
+        generateSortedArray();
+        previewq.clear();
         validate();
         repaint();
     }
@@ -390,34 +453,37 @@ public class QuickSort extends JFrame {
 
         orig = copyArray(arr, orig);
 
+        generateSortedArray();
+        previewq.clear();
         validate();
         repaint();
     }
 
     /**
-     * Test Sort
+     * This function will generate the sorted array
      */
-    // private void testSort() {
-    //     ts = new Item[10];
-    //     ts = copyArray(arr, ts);
-    //     quickSort(ts, 0, ts.length-1);
+    private void generateSortedArray() {
+        sorted = new Item[10];
+        sorted = copyArray(arr, sorted);
+        quickSort(sorted, 0, sorted.length-1);
 
-    //     for (Item x : orig) {
-    //         System.out.print(x + ", ");
-    //     }
-    //     System.out.println("");
+        for (Item x : orig) {
+            System.out.print(x + ", ");
+        }
 
-    //     for (Item x : ts) {
-    //         System.out.print(x + ", ");
-    //     }
-    //     System.out.println("");
+        System.out.println("");
 
-    //     int count = 1;
-    //     for (AnimQ q : animq) {
-    //         System.out.println("Pass "+ (count++) +": Pivot = " + q.getPivot());
-    //         System.out.println(q.getLowList());
-    //         System.out.println(q.getEqualList());
-    //         System.out.println(q.getHighList());
-    //     }
-    // }
+        for (Item x : sorted) {
+            System.out.print(x + ", ");
+        }
+        System.out.println("");
+
+        int count = 1;
+        for (Preview q : previewq) {
+            System.out.println("Pass "+ (count++) +": Pivot = " + q.getPivot());
+            System.out.println(q.getLowList());
+            System.out.println(q.getEqualList());
+            System.out.println(q.getHighList());
+        }
+    }
 }
