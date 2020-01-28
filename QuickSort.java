@@ -13,6 +13,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
+import javax.swing.JToggleButton;
 import javax.swing.SwingConstants;
 import javax.swing.Timer;
 import javax.swing.UIManager;
@@ -37,16 +38,26 @@ public class QuickSort extends JFrame {
     private JPanel controlsPanel;
     private JPanel mediaPanel, infoPanel;
     private JLabel compareLabel, pivotLabel, passLabel;
-    private JButton startBtn, rewindBtn, playBtn, fastForwardBtn, endBtn;
+    private JToggleButton playBtn;
+    private JButton startBtn, rewindBtn, fastForwardBtn, endBtn;
     private JSlider passSlider;
 
     private Timer tm;
 
-    private Item[] arr;
-    private Item[] orig; // used for resetting the ui
-    private Item[] sorted;
+    private Item[] arr, orig, sorted;
 
-    private ArrayList<Preview> previewq;
+    private int pass, animIndex, delay, INDEX, JNDEX;
+    private int swapIterator;
+    private int[] arrX;
+
+    private Color clrA, clrB;
+
+    private boolean isLowerDone, isHigherDone;
+    private boolean isSwap, hasPair, isSwapDone, isY1Done, isY2Done, isXDone;
+
+
+    // private ArrayList<Preview> previewq;
+    private ArrayList<Anim> animList;
 
     public QuickSort() {
 
@@ -130,7 +141,6 @@ public class QuickSort extends JFrame {
         speedSlider = new JSlider();
         speedSlider.setMaximum(5);
         speedSlider.setValue(0);
-        speedSlider.setInverted(true);
         speedSlider.addChangeListener(new ChangeListener(){
             @Override
             public void stateChanged(ChangeEvent evt) {
@@ -142,8 +152,6 @@ public class QuickSort extends JFrame {
         speedPanel.add(speedSlider);
 
         previewPanel = new JPanel();
-
-        previewq = new ArrayList<>();
 
         lessLabel = new JLabel();
         equalLabel = new JLabel();
@@ -158,7 +166,7 @@ public class QuickSort extends JFrame {
         optionsPanel.add(previewPanel, BorderLayout.SOUTH);
 
         boardPanel = new JPanel(null);
-        boardPanel.setBackground(new java.awt.Color(51, 51, 51));
+        boardPanel.setBackground(new Color(51, 51, 51));
         boardPanel.setBorder(javax.swing.BorderFactory.createEtchedBorder());
 
         arrLabel = new JLabel[10];
@@ -168,14 +176,16 @@ public class QuickSort extends JFrame {
         orig = new Item[10];
         orig = copyArray(arr, orig);
 
+        animList = new ArrayList<>();
+
         for (int i = 0; i < 10; i++) {
             arrLabel[i] = new JLabel(arr[i].getValue() + "");
             int len = arrLabel[i].getText().length();
             arrLabel[i].setFont(new Font("Dialog", 1, 20-len));
             arrLabel[i].setHorizontalAlignment(SwingConstants.CENTER);
             arrLabel[i].setBorder(BorderFactory.createLineBorder(new Color(0,0,0)));
-            arrLabel[i].setBackground(new java.awt.Color(153, 153, 153));
-            arrLabel[i].setForeground(new java.awt.Color(0, 0, 0));
+            arrLabel[i].setBackground(new Color(152, 152, 152));
+            arrLabel[i].setForeground(new Color(0, 0, 0));
             arrLabel[i].setOpaque(true);
             arrLabel[i].setBounds(55+(70*i), 110, 70, 100);
             boardPanel.add(arrLabel[i]);
@@ -201,7 +211,7 @@ public class QuickSort extends JFrame {
 
         rewindBtn = new JButton("<<");
 
-        playBtn = new JButton("I>");
+        playBtn = new JToggleButton("I>");
         playBtn.addItemListener(new ItemListener() {
         @Override
         public void itemStateChanged(ItemEvent evt) {
@@ -228,14 +238,59 @@ public class QuickSort extends JFrame {
         add(optionsPanel, BorderLayout.NORTH);
         add(boardPanel, BorderLayout.CENTER);
         add(controlsPanel, BorderLayout.SOUTH);
+
+        animIndex = -1;
+        pass = 0;
+
+        INDEX = 0;
+        JNDEX = 0;
+
+        swapIterator = 0;
+
+        clrA = new Color(102,102,255);
+        clrB = new Color(255,102,102);
+
+        isLowerDone = false;
+        isHigherDone = false;
+
+        isSwap = false;
+        isSwapDone = false;
+        isY1Done = false;
+        isY2Done = false;
+        isXDone = false;
+
+        arrX = new int[10];
+        for (int i = 0; i < 10; i++) {
+            arrX[i] = 55+(70*i);
+        }
+
+        tm = new Timer(0, new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                timerActionPerformed(evt);
+            }
+        });
+        generateSortedArray();
     }
 
     /**
-     * Takes the middle element as pivot, places it the right position
-     * places smaller values to the left of the pivot and adds them to
-     * a an previewq's low list and all equal or greater values are placed
-     * to the right of the pivot but equal values are added to an previewq's
-     * equal list and the greater values are added to the previewq's high list.
+     * Resets the animation back to its original state
+     */
+    private void resetAnimation() {
+        pass = 0;
+        for (int i = 0; i < 10; i++) {
+            arrLabel[i].setText(orig[i].getValue() + "");
+            int len = arrLabel[i].getText().length();
+            arrLabel[i].setFont(new Font("Dialog", 1, 20-len));
+            arrLabel[i].setHorizontalAlignment(SwingConstants.CENTER);
+            arrLabel[i].setBorder(BorderFactory.createLineBorder(new Color(0,0,0)));
+            arrLabel[i].setBackground(new Color(152, 152, 152));
+            arrLabel[i].setForeground(new Color(0, 0, 0));
+            arrLabel[i].setOpaque(true);
+            arrLabel[i].setBounds(55+(70*i), 110, 70, 100);
+        }
+    }
+
+    /**
      * This function uses Hoare's partition scheme.
      * @param arr array to be partitioned
      * @param low starting index of the array
@@ -247,26 +302,35 @@ public class QuickSort extends JFrame {
         int pivot = arr[pi].getValue();
         int i = low - 1, j = high + 1;
 
-        Preview q = new Preview(arr, low, high, pi);
-        previewq.add(q);
+        animList.get(animIndex).setLow(i);
+        animList.get(animIndex).setHigh(j);
+        // Item pivotItem = arr[pi];
+        animList.get(animIndex).setPivot(arr[pi]);
         while (true) {
 
             do {
                 i++;
+                animList.get(animIndex).addI_check(arr[i]);
             } while (arr[i].getValue() < pivot);
 
             do {
                 j--;
+                animList.get(animIndex).addJ_check(arr[j]);
             } while (arr[j].getValue() > pivot);
 
             if (i >= j) {
                 return j;
             }
 
-            Item temp = new Item(arr[i].getIndex(), arr[i].getValue());
-            arr[i] = arr[j];
-            arr[j] = temp;
+            animList.get(animIndex).addSwap(arr[i], arr[j]);
+            // Item temp = new Item(arr[i].getIndex(), arr[i].getValue());
+            // arr[i] = arr[j];
+            // arr[j] = temp;
+            int temp = arr[i].getValue();
+            arr[i].setValue(arr[j].getValue());
+            arr[j].setValue(temp);
         }
+
     }
 
     /**
@@ -278,6 +342,8 @@ public class QuickSort extends JFrame {
      */
     public void quickSort(Item[] arr, int low, int high) {
         if (low < high) {
+            animIndex++;
+            animList.add(new Anim());
             int pi = partition(arr, low, high);
 
             quickSort(arr, low, pi - 1);
@@ -319,13 +385,9 @@ public class QuickSort extends JFrame {
      * Controls the speed of the animation.
      */
     private void speedSliderStateChanged() {
-        speedLabel.setText("Speed: x" + speedSlider.getValue());
         if (speedSlider.getValue() > 0) {
             playBtn.setText("||");
             playBtn.setSelected(true);
-
-            // tm.setDelay(speedSlider.getValue());
-            // tm.start();
 
             // Resets the input forms and disables the option to change
             // the values of the array when the animation is playing.
@@ -337,11 +399,43 @@ public class QuickSort extends JFrame {
             randAllBtn.setEnabled(false);
             indexPicker.setSelectedIndex(0);
             inputField.setText("");
+
+            switch(speedSlider.getValue()) {
+                case 1:
+                    delay = 700;
+                    speedLabel.setText("Speed: x0.5");
+                    break;
+                case 2:
+                    delay = 500;
+                    speedLabel.setText("Speed: x1");
+                    break;
+                case 3:
+                    delay = 300;
+                    speedLabel.setText("Speed: x1.5");
+                    break;
+                case 4:
+                    delay = 100;
+                    speedLabel.setText("Speed: x2");
+                    break;
+            }
+
+            tm.setDelay(delay);
+            tm.start();
+
+            for (int i = 0; i < animList.size(); i++) {
+                Anim anim = animList.get(i);
+                System.out.println("PASS " + (i+1));
+                System.out.println(anim.getI_checks());
+                System.out.println(anim.getJ_checks());
+                System.out.println(anim.getSwapped());
+            }
+
         } else if (speedSlider.getValue() == 0) {
+            speedLabel.setText("Speed: x0");
             playBtn.setText("I>");
             playBtn.setSelected(false);
 
-            // tm.stop();
+            tm.stop();
 
             // Enables the option to change the values
             // of the array when the animation is not playing.
@@ -360,16 +454,195 @@ public class QuickSort extends JFrame {
      */
     private void playBtnItemStateChanged(ItemEvent evt) {
         if (evt.getStateChange() == ItemEvent.SELECTED) {
-            speedSlider.setValue(1);
+            speedSlider.setValue(2);
         } else {
             speedSlider.setValue(0);
         }
     }
 
+    /**
+     * Starts the animation
+     * @param evt
+     */
     private void timerActionPerformed(ActionEvent evt) {
-        for (int i = 0; i < 10; i++) {
-            arrLabel[i].setBounds(arrLabel[i].getX(), arrLabel[i].getY()+1, 70, 30);
+        animate();
+    }
+
+    /**
+     * Checks if the item has a paired item in a Array of ItemPairs
+     * @param x
+     * @return
+     */
+    public boolean hasPair(Item x, ArrayList<ItemPair> pairs) {
+        for (ItemPair p : pairs) {
+            if (p.getA() == x) {
+                return true;
+            }
         }
+        return false;
+    }
+
+    /**
+     * The main animation function
+     */
+    private void animate() {
+        //pass++;
+        if (pass < animList.size()) {
+            passLabel.setText("Pass " + (pass+1));
+            Anim anim = animList.get(pass);
+            Item pivot = anim.getPivot();
+            int pi = pivot.getIndex();
+            arrLabel[pi].setBackground(new Color(51, 153, 0));
+
+            tm.setDelay(delay);
+
+            if (!isSwap) {
+                Item A = anim.getI_checks().get(INDEX);
+                if (hasPair(A, anim.getSwapped())) {
+
+                }
+            } else {
+                tm.setDelay(delay/100);
+
+                if (isSwapDone) {
+                    isSwapDone = false;
+                    isSwap = false;
+                    isY1Done = false;
+                    isXDone = false;
+                    isY2Done = false;
+                    swapIterator += 1;
+                } else {
+                    Item A = anim.getSwapped().get(swapIterator).getA();
+                    Item B = anim.getSwapped().get(swapIterator).getB();
+                    int A_in = A.getIndex();
+                    int B_in = B.getIndex();
+                    int x_i = arrLabel[A_in].getX();
+                    int y_i = arrLabel[A_in].getY();
+                    int x_j = arrLabel[B_in].getX();
+                    int y_j = arrLabel[B_in].getY();
+                    if (!isY1Done) {
+                        if (arrLabel[A_in].getY() > 10 || arrLabel[B_in].getY() < 210) {
+                            if (arrLabel[A_in].getY() > 10) arrLabel[A_in].setBounds(x_i, y_i-1, 70, 100);
+                            if (arrLabel[B_in].getY() < 210) arrLabel[B_in].setBounds(x_j, y_j+1, 70, 100);
+                        } else {
+                            isY1Done = true;
+                        }
+                    } else {
+                        if (!isXDone) {
+                            if (arrLabel[A_in].getX() < arrX[B_in] || arrLabel[B_in].getX() > arrX[A_in]) {
+                                if (arrLabel[A_in].getX() < arrX[B_in]) arrLabel[A_in].setBounds(x_i+1, y_i, 70, 100);
+                                if (arrLabel[B_in].getX() > arrX[A_in]) arrLabel[B_in].setBounds(x_j-1, y_j, 70, 100);
+                            } else {
+                                isXDone = true;
+                            }
+                        } else {
+                            if (!isY2Done) {
+                                if (arrLabel[A_in].getY() < 110 || arrLabel[B_in].getY() > 110) {
+                                    if (arrLabel[A_in].getY() < 110) arrLabel[A_in].setBounds(x_i, y_i+1, 70, 100);
+                                    if (arrLabel[B_in].getY() > 110) arrLabel[B_in].setBounds(x_j, y_j-1, 70, 100);
+                                } else {
+                                    arrLabel[A_in].setBackground(clrB);
+                                    arrLabel[B_in].setBackground(clrA);
+                                    JLabel tempLabel = arrLabel[A_in];
+                                    arrLabel[A_in] = arrLabel[B_in];
+                                    arrLabel[B_in] = tempLabel;
+                                    isY2Done = true;
+                                    isSwapDone = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        } else {
+            for (int i = 0; i < 10; i++) {
+                arrLabel[i].setBackground(new Color(152, 152, 152));
+            }
+            speedSlider.setValue(0);
+        }
+        // if (pass < animList.size()) {
+        //     passLabel.setText("Pass " + (pass+1));
+        //     Anim q = animList.get(pass);
+        //     Item pivot = q.getPivot();
+        //     int pi = pivot.getIndex();
+        //     arrLabel[pi].setBackground(new Color(51, 153, 0));
+
+        //     tm.setDelay(delay);
+
+        //     if (isSwap == false) {
+        //         if (A_in == q.getLow() || Integer.parseInt(arrLabel[A_in].getText()) < pivot.getValue()) {
+        //             A_in++;
+        //             arrLabel[A_in].setBackground(clrA);
+        //         }
+
+        //         if (B_in == q.getHigh() || Integer.parseInt(arrLabel[B_in].getText()) > pivot.getValue()) {
+        //             B_in--;
+        //             arrLabel[B_in].setBackground(clrB);
+        //             isSwap = false;
+        //         } else {
+        //             isSwap = true;
+        //         }
+
+        //         if (A_in >= B_in) {
+        //             for (int i = 0; i < 10; i++) {
+        //                 arrLabel[i].setBackground(new Color(152, 152, 152));
+        //             }
+        //             A_in = q.getLow();
+        //             B_in = q.getHigh();
+        //             pass++;
+        //         }
+        //     } else {
+        //         tm.setDelay(delay/100);
+
+        //         if (isSwapDone) {
+        //             isSwap = false;
+        //             isY1Done = false;
+        //             isXDone = false;
+        //             isY2Done = false;
+        //         } else {
+        //             int x_i = arrLabel[A_in].getX();
+        //             int y_i = arrLabel[A_in].getY();
+        //             int x_j = arrLabel[B_in].getX();
+        //             int y_j = arrLabel[B_in].getY();
+        //             if (isY1Done == false) {
+        //                 if (arrLabel[A_in].getY() > 10 || arrLabel[B_in].getY() < 210) {
+        //                     if (arrLabel[A_in].getY() > 10) arrLabel[A_in].setBounds(x_i, y_i-1, 70, 100);
+        //                     if (arrLabel[B_in].getY() < 210) arrLabel[B_in].setBounds(x_j, y_j+1, 70, 100);
+        //                 } else {
+        //                     isY1Done = true;
+        //                 }
+        //             } else {
+        //                 if (isXDone == false) {
+        //                     if (arrLabel[A_in].getX() < arrX[B_in] || arrLabel[B_in].getX() > arrX[A_in]) {
+        //                         if (arrLabel[A_in].getX() < arrX[B_in]) arrLabel[A_in].setBounds(x_i+1, y_i, 70, 100);
+        //                         if (arrLabel[B_in].getX() > arrX[A_in]) arrLabel[B_in].setBounds(x_j-1, y_j, 70, 100);
+        //                     } else {
+        //                         isXDone = true;
+        //                     }
+        //                 } else {
+        //                     if (isY2Done == false) {
+        //                         if (arrLabel[A_in].getY() < 110 || arrLabel[B_in].getY() > 110) {
+        //                             if (arrLabel[A_in].getY() < 110) arrLabel[A_in].setBounds(x_i, y_i+1, 70, 100);
+        //                             if (arrLabel[B_in].getY() > 110) arrLabel[B_in].setBounds(x_j, y_j-1, 70, 100);
+        //                         } else {
+        //                             JLabel tempLabel = arrLabel[A_in];
+        //                             arrLabel[A_in] = arrLabel[B_in];
+        //                             arrLabel[B_in] = tempLabel;
+        //                             isY2Done = true;
+        //                             isSwapDone = true;
+        //                         }
+        //                     }
+        //                 }
+        //             }
+        //         }
+        //     }
+        // } else {
+        //     for (int i = 0; i < 10; i++) {
+        //         arrLabel[i].setBackground(new Color(152, 152, 152));
+        //     }
+        //     speedSlider.setValue(0);
+        // }
     }
 
     /**
@@ -390,6 +663,7 @@ public class QuickSort extends JFrame {
                     int len = arrLabel[index].getText().length();
                     arrLabel[index].setFont(new Font("Dialog", 1, 20-len));
                     inputField.setText("");
+                    animIndex = -1;
                     generateSortedArray();
                 } else {
                     JOptionPane.showMessageDialog(this,
@@ -404,7 +678,6 @@ public class QuickSort extends JFrame {
                     JOptionPane.ERROR_MESSAGE);
             }
 
-            previewq.clear();
             validate();
             repaint();
         }
@@ -433,8 +706,8 @@ public class QuickSort extends JFrame {
         int len = arrLabel[index].getText().length();
         arrLabel[index].setFont(new Font("Dialog", 1, 20-len));
 
+        animIndex = -1;
         generateSortedArray();
-        previewq.clear();
         validate();
         repaint();
     }
@@ -453,8 +726,8 @@ public class QuickSort extends JFrame {
 
         orig = copyArray(arr, orig);
 
+        animIndex = -1;
         generateSortedArray();
-        previewq.clear();
         validate();
         repaint();
     }
@@ -463,27 +736,10 @@ public class QuickSort extends JFrame {
      * This function will generate the sorted array
      */
     private void generateSortedArray() {
+        animList.clear();
         sorted = new Item[10];
         sorted = copyArray(arr, sorted);
         quickSort(sorted, 0, sorted.length-1);
-
-        for (Item x : orig) {
-            System.out.print(x + ", ");
-        }
-
-        System.out.println("");
-
-        for (Item x : sorted) {
-            System.out.print(x + ", ");
-        }
-        System.out.println("");
-
-        int count = 1;
-        for (Preview q : previewq) {
-            System.out.println("Pass "+ (count++) +": Pivot = " + q.getPivot());
-            System.out.println(q.getLowList());
-            System.out.println(q.getEqualList());
-            System.out.println(q.getHighList());
-        }
+        resetAnimation();
     }
 }
