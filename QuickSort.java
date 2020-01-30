@@ -497,9 +497,44 @@ public class QuickSort extends JFrame {
             tm.setDelay(delay);
 
             if (!isSwap) {
-                Item A = anim.getI_checks().get(INDEX);
-                if (hasPair(A, anim.getSwapped())) {
+                // Item A = anim.getI_checks().get(INDEX);
+                // if (hasPair(A, anim.getSwapped())) {
 
+                // }
+                if (INDEX < anim.getI_checks().size() && JNDEX < anim.getJ_checks().size()) {
+                    if (INDEX < anim.getI_checks().size()) {
+                        Item A = anim.getI_checks().get(INDEX);
+                        Item A_target = null;
+                        if (swapIterator < anim.getSwapped().size())
+                            A_target = anim.getSwapped().get(swapIterator).getA();
+                        int A_in = A.getIndex();
+                        arrLabel[A_in].setBackground(clrA);
+                        if (A == A_target) {
+                            if (JNDEX < anim.getJ_checks().size()) {
+                                Item B = anim.getJ_checks().get(JNDEX);
+                                Item B_target = null;
+                                if (swapIterator < anim.getSwapped().size())
+                                    B_target = anim.getSwapped().get(swapIterator).getB();
+                                int B_in = B.getIndex();
+                                arrLabel[B_in].setBackground(clrB);
+                                if (B == B_target) {
+                                    isSwap = true;
+                                } else {
+                                    JNDEX++;
+                                }
+                            }
+                        } else {
+                            INDEX++;
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < 10; i++) {
+                        arrLabel[i].setBackground(new Color(152, 152, 152));
+                    }
+                    pass++;
+                    INDEX = 0;
+                    JNDEX = 0;
+                    swapIterator = 0;
                 }
             } else {
                 tm.setDelay(delay/100);
@@ -554,7 +589,6 @@ public class QuickSort extends JFrame {
                     }
                 }
             }
-
         } else {
             for (int i = 0; i < 10; i++) {
                 arrLabel[i].setBackground(new Color(152, 152, 152));
