@@ -4,15 +4,16 @@ public class Anim {
 
     private Item pivot;
     private ArrayList<Item> i_checks, j_checks;
+    private ArrayList<Integer[]> passes;
     private ArrayList<ItemPair> swapped;
 
-    public int i, j;
     private int low, high;
 
     public Anim() {
         pivot = null;
         i_checks = new ArrayList<>();
         j_checks = new ArrayList<>();
+        passes = new ArrayList<>();
         swapped = new ArrayList<>();
     }
 
@@ -50,7 +51,6 @@ public class Anim {
 
     public void setLow(int low) {
         this.low = low;
-        i = low;
     }
 
     public int getLow() {
@@ -59,7 +59,6 @@ public class Anim {
 
     public void setHigh(int high) {
         this.high = high;
-        j = high;
     }
 
     public int getHigh() {

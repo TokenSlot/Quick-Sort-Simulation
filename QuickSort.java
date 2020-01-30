@@ -30,7 +30,7 @@ public class QuickSort extends JFrame {
     private JTextField inputField;
     private JButton addBtn, inputBtn, randBtn, randAllBtn;
     private JSlider speedSlider;
-    private JLabel speedLabel, lessLabel, equalLabel, moreLabel;
+    private JLabel speedLabel, indexLabel;
 
     private JPanel boardPanel;
     private JLabel[] arrLabel;
@@ -52,8 +52,8 @@ public class QuickSort extends JFrame {
 
     private Color clrA, clrB;
 
-    private boolean isLowerDone, isHigherDone;
-    private boolean isSwap, hasPair, isSwapDone, isY1Done, isY2Done, isXDone;
+    // flags
+    private boolean isSwap, isSwapDone, isY1Done, isY2Done, isXDone;
 
 
     // private ArrayList<Preview> previewq;
@@ -153,13 +153,9 @@ public class QuickSort extends JFrame {
 
         previewPanel = new JPanel();
 
-        lessLabel = new JLabel();
-        equalLabel = new JLabel();
-        moreLabel = new JLabel();
+        indexLabel = new JLabel("-");
 
-        previewPanel.add(lessLabel);
-        previewPanel.add(equalLabel);
-        previewPanel.add(moreLabel);
+        previewPanel.add(indexLabel);
 
         optionsPanel.add(inputPanel, BorderLayout.CENTER);
         optionsPanel.add(speedPanel, BorderLayout.EAST);
@@ -250,9 +246,6 @@ public class QuickSort extends JFrame {
         clrA = new Color(102,102,255);
         clrB = new Color(255,102,102);
 
-        isLowerDone = false;
-        isHigherDone = false;
-
         isSwap = false;
         isSwapDone = false;
         isY1Done = false;
@@ -306,22 +299,25 @@ public class QuickSort extends JFrame {
         animList.get(animIndex).setHigh(j);
         // Item pivotItem = arr[pi];
         animList.get(animIndex).setPivot(arr[pi]);
+        System.out.println("Pivot = " + pivot + " at index " + pi);
         while (true) {
 
             do {
                 i++;
                 animList.get(animIndex).addI_check(arr[i]);
+                System.out.println("Check i = " + i + ": " + arr[i]);
             } while (arr[i].getValue() < pivot);
 
             do {
                 j--;
                 animList.get(animIndex).addJ_check(arr[j]);
+                System.out.println("Check j = " + j + ": " + arr[j]);
             } while (arr[j].getValue() > pivot);
 
             if (i >= j) {
                 return j;
             }
-
+            System.out.println("Swap: " + arr[i] + " at index " + i + ", " + arr[j] + " at index " + j);
             animList.get(animIndex).addSwap(arr[i], arr[j]);
             // Item temp = new Item(arr[i].getIndex(), arr[i].getValue());
             // arr[i] = arr[j];
@@ -344,9 +340,10 @@ public class QuickSort extends JFrame {
         if (low < high) {
             animIndex++;
             animList.add(new Anim());
+            System.out.println("\nPASS " + animIndex + " (" + low + "-" + high + ")" + "\n");
             int pi = partition(arr, low, high);
 
-            quickSort(arr, low, pi - 1);
+            quickSort(arr, low, pi);
             quickSort(arr, pi + 1, high);
         }
     }
@@ -486,21 +483,19 @@ public class QuickSort extends JFrame {
      * The main animation function
      */
     private void animate() {
-        //pass++;
         if (pass < animList.size()) {
             passLabel.setText("Pass " + (pass+1));
             Anim anim = animList.get(pass);
             Item pivot = anim.getPivot();
             int pi = pivot.getIndex();
+
             arrLabel[pi].setBackground(new Color(51, 153, 0));
+            pivotLabel.setText("Pivot: " + arrLabel[pi].getText());
+            indexLabel.setText("Index: " + (anim.getLow()+1) + " to " + (anim.getHigh()-1));
 
             tm.setDelay(delay);
 
             if (!isSwap) {
-                // Item A = anim.getI_checks().get(INDEX);
-                // if (hasPair(A, anim.getSwapped())) {
-
-                // }
                 if (INDEX < anim.getI_checks().size() && JNDEX < anim.getJ_checks().size()) {
                     if (INDEX < anim.getI_checks().size()) {
                         Item A = anim.getI_checks().get(INDEX);
@@ -509,6 +504,7 @@ public class QuickSort extends JFrame {
                             A_target = anim.getSwapped().get(swapIterator).getA();
                         int A_in = A.getIndex();
                         arrLabel[A_in].setBackground(clrA);
+                        compareLabel.setText(arrLabel[A_in].getText() + " < " + arrLabel[pi].getText());
                         if (A == A_target) {
                             if (JNDEX < anim.getJ_checks().size()) {
                                 Item B = anim.getJ_checks().get(JNDEX);
@@ -517,6 +513,7 @@ public class QuickSort extends JFrame {
                                     B_target = anim.getSwapped().get(swapIterator).getB();
                                 int B_in = B.getIndex();
                                 arrLabel[B_in].setBackground(clrB);
+                                compareLabel.setText(arrLabel[B_in].getText() + " > " + arrLabel[pi].getText());
                                 if (B == B_target) {
                                     isSwap = true;
                                 } else {
@@ -535,6 +532,9 @@ public class QuickSort extends JFrame {
                     INDEX = 0;
                     JNDEX = 0;
                     swapIterator = 0;
+                    indexLabel.setText("-");
+                    compareLabel.setText("-");
+                    pivotLabel.setText("-");
                 }
             } else {
                 tm.setDelay(delay/100);
@@ -555,6 +555,15 @@ public class QuickSort extends JFrame {
                     int y_i = arrLabel[A_in].getY();
                     int x_j = arrLabel[B_in].getX();
                     int y_j = arrLabel[B_in].getY();
+
+                    // if (A == pivot || B == pivot) {
+                    //     if (A == pivot) {
+                    //         pivot = A;
+                    //     } else {
+                    //         pivot = B;
+                    //     }
+                    //     pi = pivot.getIndex();
+                    // }
                     if (!isY1Done) {
                         if (arrLabel[A_in].getY() > 10 || arrLabel[B_in].getY() < 210) {
                             if (arrLabel[A_in].getY() > 10) arrLabel[A_in].setBounds(x_i, y_i-1, 70, 100);
@@ -581,6 +590,7 @@ public class QuickSort extends JFrame {
                                     JLabel tempLabel = arrLabel[A_in];
                                     arrLabel[A_in] = arrLabel[B_in];
                                     arrLabel[B_in] = tempLabel;
+
                                     isY2Done = true;
                                     isSwapDone = true;
                                 }
@@ -595,88 +605,6 @@ public class QuickSort extends JFrame {
             }
             speedSlider.setValue(0);
         }
-        // if (pass < animList.size()) {
-        //     passLabel.setText("Pass " + (pass+1));
-        //     Anim q = animList.get(pass);
-        //     Item pivot = q.getPivot();
-        //     int pi = pivot.getIndex();
-        //     arrLabel[pi].setBackground(new Color(51, 153, 0));
-
-        //     tm.setDelay(delay);
-
-        //     if (isSwap == false) {
-        //         if (A_in == q.getLow() || Integer.parseInt(arrLabel[A_in].getText()) < pivot.getValue()) {
-        //             A_in++;
-        //             arrLabel[A_in].setBackground(clrA);
-        //         }
-
-        //         if (B_in == q.getHigh() || Integer.parseInt(arrLabel[B_in].getText()) > pivot.getValue()) {
-        //             B_in--;
-        //             arrLabel[B_in].setBackground(clrB);
-        //             isSwap = false;
-        //         } else {
-        //             isSwap = true;
-        //         }
-
-        //         if (A_in >= B_in) {
-        //             for (int i = 0; i < 10; i++) {
-        //                 arrLabel[i].setBackground(new Color(152, 152, 152));
-        //             }
-        //             A_in = q.getLow();
-        //             B_in = q.getHigh();
-        //             pass++;
-        //         }
-        //     } else {
-        //         tm.setDelay(delay/100);
-
-        //         if (isSwapDone) {
-        //             isSwap = false;
-        //             isY1Done = false;
-        //             isXDone = false;
-        //             isY2Done = false;
-        //         } else {
-        //             int x_i = arrLabel[A_in].getX();
-        //             int y_i = arrLabel[A_in].getY();
-        //             int x_j = arrLabel[B_in].getX();
-        //             int y_j = arrLabel[B_in].getY();
-        //             if (isY1Done == false) {
-        //                 if (arrLabel[A_in].getY() > 10 || arrLabel[B_in].getY() < 210) {
-        //                     if (arrLabel[A_in].getY() > 10) arrLabel[A_in].setBounds(x_i, y_i-1, 70, 100);
-        //                     if (arrLabel[B_in].getY() < 210) arrLabel[B_in].setBounds(x_j, y_j+1, 70, 100);
-        //                 } else {
-        //                     isY1Done = true;
-        //                 }
-        //             } else {
-        //                 if (isXDone == false) {
-        //                     if (arrLabel[A_in].getX() < arrX[B_in] || arrLabel[B_in].getX() > arrX[A_in]) {
-        //                         if (arrLabel[A_in].getX() < arrX[B_in]) arrLabel[A_in].setBounds(x_i+1, y_i, 70, 100);
-        //                         if (arrLabel[B_in].getX() > arrX[A_in]) arrLabel[B_in].setBounds(x_j-1, y_j, 70, 100);
-        //                     } else {
-        //                         isXDone = true;
-        //                     }
-        //                 } else {
-        //                     if (isY2Done == false) {
-        //                         if (arrLabel[A_in].getY() < 110 || arrLabel[B_in].getY() > 110) {
-        //                             if (arrLabel[A_in].getY() < 110) arrLabel[A_in].setBounds(x_i, y_i+1, 70, 100);
-        //                             if (arrLabel[B_in].getY() > 110) arrLabel[B_in].setBounds(x_j, y_j-1, 70, 100);
-        //                         } else {
-        //                             JLabel tempLabel = arrLabel[A_in];
-        //                             arrLabel[A_in] = arrLabel[B_in];
-        //                             arrLabel[B_in] = tempLabel;
-        //                             isY2Done = true;
-        //                             isSwapDone = true;
-        //                         }
-        //                     }
-        //                 }
-        //             }
-        //         }
-        //     }
-        // } else {
-        //     for (int i = 0; i < 10; i++) {
-        //         arrLabel[i].setBackground(new Color(152, 152, 152));
-        //     }
-        //     speedSlider.setValue(0);
-        // }
     }
 
     /**
@@ -774,6 +702,8 @@ public class QuickSort extends JFrame {
         sorted = new Item[10];
         sorted = copyArray(arr, sorted);
         quickSort(sorted, 0, sorted.length-1);
+        passSlider.setMinimum(0);
+        passSlider.setMaximum(animList.size());
         resetAnimation();
     }
 }
