@@ -4,7 +4,7 @@ public class Anim {
 
     private Item pivot;
     private ArrayList<Item> i_checks, j_checks;
-    private ArrayList<Integer[]> passes;
+    private ArrayList<Item[]> passes;
     private ArrayList<ItemPair> swapped;
 
     private int low, high;
@@ -31,6 +31,14 @@ public class Anim {
 
     public ArrayList<Item> getI_checks() {
         return i_checks;
+    }
+
+    public void addPasses(Item[] arr) {
+        passes.add(arr);
+    }
+
+    public ArrayList<Item[]> getPasses() {
+        return passes;
     }
 
     public void addJ_check(Item item) {
