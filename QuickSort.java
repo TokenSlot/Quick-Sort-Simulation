@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import javax.swing.BorderFactory;
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -57,9 +55,11 @@ public class QuickSort extends JFrame {
 
     private Color clrA, clrB;
 
-    // flags
+    // Animation flags
     private boolean isPivotSwap, isPivotSwapping, isSwap, isSwapDone, isY1Done, isY2Done, isXDone;
 
+    // Saving flag
+    private boolean areTextFieldsValid;
 
     // private ArrayList<Preview> previewq;
     private ArrayList<Anim> animList;
@@ -74,17 +74,17 @@ public class QuickSort extends JFrame {
                     break;
                 }
             }
-            java.net.URL url = ClassLoader.getSystemResource("resources/ico.png");
-            Toolkit kit = Toolkit.getDefaultToolkit();
-            Image img = kit.createImage(url);
-            setIconImage(img);
+            // java.net.URL url = ClassLoader.getSystemResource("resources/ico.png");
+            // Toolkit kit = Toolkit.getDefaultToolkit();
+            // Image img = kit.createImage(url);
+            // setIconImage(img);
         } catch (Exception e) {}
 
         setTitle("Sanic's Quickie Sort: Gotta go fast!");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         setResizable(false);
-        setSize(810, 510);
+        setSize(810, 530);
         setLocationRelativeTo(null);
 
         optionsPanel = new JPanel(new BorderLayout());
@@ -156,7 +156,9 @@ public class QuickSort extends JFrame {
             int randBtnIndex = i;
             randBtn[i].addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
-                    randBtnActionPerformed(randBtnIndex);
+                    if (checkMinMax()) {
+                        randBtnActionPerformed(randBtnIndex);
+                    }
                 }
             });
 
@@ -166,19 +168,59 @@ public class QuickSort extends JFrame {
         }
 
         minLabel = new JLabel("Min");
-        maxLabel = new JLabel("Max");
+        minLabel.setForeground(new Color(255, 255, 255));
+        minLabel.setBounds(50, 250, 30, 24);
+        minLabel.setVisible(false);
+
         minTextField = new JTextField();
+        minTextField.setBounds(90, 250, 100, 24);
+        minTextField.setVisible(false);
+
+        maxLabel = new JLabel("Max");
+        maxLabel.setForeground(new Color(255, 255, 255));
+        maxLabel.setBounds(50, 280, 30, 24);
+        maxLabel.setVisible(false);
+
         maxTextField = new JTextField();
+        maxTextField.setBounds(90, 280, 100, 24);
+        maxTextField.setVisible(false);
 
         randAllBtn = new JButton("Random All");
+        randAllBtn.setBounds(50, 310, 140, 32);
+        randAllBtn.setVisible(false);
         randAllBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
-                randAllBtnActionPerformed(evt);
+                if (checkMinMax()) {
+                    randAllBtnActionPerformed(evt);
+                }
             }
         });
 
         saveBtn = new JButton("Save");
+        saveBtn.setBounds(320, 300, 80, 32);
+        saveBtn.setVisible(false);
+        saveBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                saveBtnActionPerformed();
+            }
+        });
+
         cancelBtn = new JButton("Cancel");
+        cancelBtn.setBounds(400, 300, 80, 32);
+        cancelBtn.setVisible(false);
+        cancelBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                playModeActivate();
+            }
+        });
+
+        boardPanel.add(minLabel);
+        boardPanel.add(maxLabel);
+        boardPanel.add(minTextField);
+        boardPanel.add(maxTextField);
+        boardPanel.add(randAllBtn);
+        boardPanel.add(saveBtn);
+        boardPanel.add(cancelBtn);
 
         //Play Mode
         arrLabel = new JLabel[10];
@@ -305,6 +347,11 @@ public class QuickSort extends JFrame {
         isY1Done = false;
         isY2Done = false;
         isXDone = false;
+
+        compareLabel.setText("-");
+        pivotLabel.setText("-");
+        passLabel.setText("-");
+
         for (int i = 0; i < 10; i++) {
             arrLabel[i].setText(orig[i].getValue() + "");
             int len = arrLabel[i].getText().length();
@@ -420,6 +467,8 @@ public class QuickSort extends JFrame {
             playBtn.setText("||");
             playBtn.setSelected(true);
 
+            editBtn.setEnabled(false);
+
             switch(speedSlider.getValue()) {
                 case 1:
                     delay = 700;
@@ -454,6 +503,8 @@ public class QuickSort extends JFrame {
             speedLabel.setText("Speed: x0");
             playBtn.setText("I>");
             playBtn.setSelected(false);
+
+            editBtn.setEnabled(true);
 
             tm.stop();
         }
@@ -497,6 +548,7 @@ public class QuickSort extends JFrame {
             indexLabel.setText("Index: " + (anim.getLow()+1) + " to " + (anim.getHigh()-1));
 
             tm.setDelay(delay);
+            System.out.println(delay);
 
             if (!isSwap) {
                 if (INDEX < anim.getI_checks().size() && JNDEX < anim.getJ_checks().size()) {
@@ -614,15 +666,30 @@ public class QuickSort extends JFrame {
     }
 
     private void editBtnActionPerformed() {
-        for (int i = 0; i < 10; i++) {
-            arrLabel[i].setVisible(false);
+        resetAnimation();
 
+        for (int i = 0; i < 10; i++) {
+            arrTextField[i].setText(orig[i].getValue() + "");
+        }
+
+        for (int i = 0; i < 10; i++) {
             arrIndexLabel[i].setVisible(true);
             arrTextField[i].setVisible(true);
             randBtn[i].setVisible(true);
+
+            arrLabel[i].setVisible(false);
         }
 
+        minLabel.setVisible(true);
+        maxLabel.setVisible(true);
+        minTextField.setVisible(true);
+        maxTextField.setVisible(true);
+        randAllBtn.setVisible(true);
+        saveBtn.setVisible(true);
+        cancelBtn.setVisible(true);
+
         editBtn.setEnabled(false);
+        speedSlider.setEnabled(false);
         startBtn.setEnabled(false);
         rewindBtn.setEnabled(false);
         playBtn.setEnabled(false);
@@ -631,80 +698,139 @@ public class QuickSort extends JFrame {
         passSlider.setEnabled(false);
     }
 
-    /**
-     * Get input from user and change the value in the array base on the selected index.
-     */
-    // private void inputBtnActionPerformed(ActionEvent evt) {
-    //     int index = indexPicker.getSelectedIndex();
-    //     int value = Integer.parseInt(arrLabel[index].getText());
 
-    //     if (!"".equals(inputField.getText())) {
-    //         try {
-    //             value = Integer.parseInt(inputField.getText());
+    private boolean checkMinMax() {
+        try {
+            int min = 0, max = Integer.MAX_VALUE;
 
-    //             if (value >= 0) {
-    //                 arr[index].setValue(value);
-    //                 orig[index].setValue(value);
-    //                 arrLabel[index].setText(arr[index].getValue() + "");
-    //                 int len = arrLabel[index].getText().length();
-    //                 arrLabel[index].setFont(new Font("Dialog", 1, 20-len));
-    //                 inputField.setText("");
-    //                 animIndex = -1;
-    //                 generateSortedArray();
-    //             } else {
-    //                 JOptionPane.showMessageDialog(this,
-    //                 "Negative numbers are not accepted.",
-    //                 "Invalid Input",
-    //                 JOptionPane.WARNING_MESSAGE);
-    //             }
-    //         } catch (NumberFormatException e) {
-    //             JOptionPane.showMessageDialog(this,
-    //                 inputField.getText() + " is not an integer.",
-    //                 "Invalid Input: " + e,
-    //                 JOptionPane.ERROR_MESSAGE);
-    //         }
+            if (!"".equals(minTextField.getText())) {
+                min = Integer.parseInt(minTextField.getText());
+            }
 
-    //         validate();
-    //         repaint();
-    //     }
-    // }
+            if (!"".equals(maxTextField.getText())) {
+                max = Integer.parseInt(maxTextField.getText());
+            }
 
+            if (min > max) {
+                JOptionPane.showMessageDialog(this, "Min is bigger than Max", "Warning", JOptionPane.WARNING_MESSAGE);
+                return false;
+            } else {
+                return true;
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, e, "Error", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+    }
 
     /**
      * Randomizes the value in the array base on the selected index.
      */
     private void randBtnActionPerformed(int index) {
         Random rand = new Random();
+        int min = 0, max = Integer.MAX_VALUE;
 
-        int value = rand.nextInt(Integer.MAX_VALUE);
-        arr[index].setValue(value);
-        orig[index].setValue(value);
+        if (!"".equals(minTextField.getText())) {
+            min = Integer.parseInt(minTextField.getText());
+        }
 
-        arrTextField[index].setText(arr[index].getValue() + "");
+        if (!"".equals(maxTextField.getText())) {
+            max = Integer.parseInt(maxTextField.getText());
+        }
 
-        animIndex = -1;
-        validate();
-        repaint();
+        int value = rand.nextInt((max - min) + 1) + min;
+
+        arrTextField[index].setText(value + "");
     }
 
     /**
      * Randomizes all the values in the array.
      */
     private void randAllBtnActionPerformed(ActionEvent evt) {
-        arr = generateArray();
+        Random rand = new Random();
+        int min = 0, max = Integer.MAX_VALUE;
 
-        for (int i = 0; i < 10; i++) {
-            arrLabel[i].setText(arr[i].getValue() + "");
-            int len = arrLabel[i].getText().length();
-            arrLabel[i].setFont(new Font("Dialog", 1, 20-len));
+        if (!"".equals(minTextField.getText())) {
+            min = Integer.parseInt(minTextField.getText());
         }
 
-        orig = copyArray(arr, orig);
+        if (!"".equals(maxTextField.getText())) {
+            max = Integer.parseInt(maxTextField.getText());
+        }
+        for (int i = 0; i < 10; i++) {
+            int value = rand.nextInt((max - min) + 1) + min;
+            arrTextField[i].setText(value + "");
+        }
+    }
 
-        animIndex = -1;
+    /**
+     * Saves the inputs into the new array
+     */
+    private void saveBtnActionPerformed() {
+
+        areTextFieldsValid = true;
+
+        for (int i = 0; i < 10; i++) {
+            if ("".equals(arrTextField[i].getText())) {
+                areTextFieldsValid = false;
+            } else {
+                try {
+                    Integer.parseInt(arrTextField[i].getText());
+                } catch (NumberFormatException e) {
+                    areTextFieldsValid = false;
+                }
+            }
+        }
+
+        if (areTextFieldsValid) {
+            int confirmation = JOptionPane.showConfirmDialog(this, "Are you sure?");
+
+            if (confirmation == JOptionPane.YES_OPTION) {
+                for (int i = 0; i < 10; i++) {
+                    int value = Integer.parseInt(arrTextField[i].getText());
+                    arr[i].setValue(value);
+                    orig[i].setValue(value);
+                }
+                playModeActivate();
+            }
+
+        } else {
+            JOptionPane.showMessageDialog(this, "Some inputs are invalid.\nYou can only input 0 to Max Integer", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
+    }
+
+    /**
+     * Switches to play mode
+     */
+    private void playModeActivate() {
         generateSortedArray();
-        validate();
-        repaint();
+
+        for (int i = 0; i < 10; i++) {
+            arrIndexLabel[i].setVisible(false);
+            arrTextField[i].setVisible(false);
+            randBtn[i].setVisible(false);
+
+            arrLabel[i].setVisible(true);
+        }
+
+        minLabel.setVisible(false);
+        maxLabel.setVisible(false);
+        minTextField.setVisible(false);
+        maxTextField.setVisible(false);
+        randAllBtn.setVisible(false);
+        saveBtn.setVisible(false);
+        cancelBtn.setVisible(false);
+
+        editBtn.setEnabled(true);
+        speedSlider.setEnabled(true);
+        startBtn.setEnabled(true);
+        rewindBtn.setEnabled(true);
+        playBtn.setEnabled(true);
+        fastForwardBtn.setEnabled(true);
+        endBtn.setEnabled(true);
+        passSlider.setEnabled(true);
     }
 
     /**
