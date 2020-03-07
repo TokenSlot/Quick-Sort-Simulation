@@ -37,7 +37,6 @@ public class QuickSort extends JFrame {
     private JButton randAllBtn, saveBtn, cancelBtn;
     private JLabel[] arrLabel;
 
-
     private JPanel controlsPanel;
     private JPanel mediaPanel, infoPanel;
     private JLabel compareLabel, pivotLabel, passLabel;
@@ -548,7 +547,7 @@ public class QuickSort extends JFrame {
             indexLabel.setText("Index: " + (anim.getLow()+1) + " to " + (anim.getHigh()-1));
 
             tm.setDelay(delay);
-            System.out.println(delay);
+            // System.out.println(delay);
 
             if (!isSwap) {
                 if (INDEX < anim.getI_checks().size() && JNDEX < anim.getJ_checks().size()) {
