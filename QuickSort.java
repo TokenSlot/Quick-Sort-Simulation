@@ -57,8 +57,8 @@ public class QuickSort extends JFrame {
     // Animation flags
     private boolean isPivotSwap, isPivotSwapping, isSwap, isSwapDone, isY1Done, isY2Done, isXDone;
 
-    // Saving flag
-    private boolean areTextFieldsValid;
+    // Saving flags
+    private boolean areTextFieldsValid, isAnimationPlaying;
 
     // private ArrayList<Preview> previewq;
     private ArrayList<Anim> animList;
@@ -263,8 +263,22 @@ public class QuickSort extends JFrame {
         mediaPanel = new JPanel();
 
         startBtn = new JButton("|<");
+        startBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                passSlider.setValue(0);
+                resetAnimation();
+            }
+        });
 
-        rewindBtn = new JButton("<<");
+        // rewindBtn = new JButton("<<");
+        // rewindBtn.addActionListener(new ActionListener() {
+        //     public void actionPerformed(ActionEvent evt) {
+        //         if (pass > 0) {
+        //             passSlider.setValue(passSlider.getValue()-1);
+        //             jumpPass(pass-1);
+        //         }
+        //     }
+        // });
 
         playBtn = new JToggleButton("I>");
         playBtn.addItemListener(new ItemListener() {
@@ -274,14 +288,26 @@ public class QuickSort extends JFrame {
             }
         });
 
-        fastForwardBtn = new JButton(">>");
+        // fastForwardBtn = new JButton(">>");
+        // fastForwardBtn.addActionListener(new ActionListener() {
+        //     public void actionPerformed(ActionEvent evt) {
+        //         if (pass < 9) {
+        //             passSlider.setValue(passSlider.getValue()+1);
+        //             jumpPass(pass+1);
+        //         }
+        //     }
+        // });
 
         endBtn = new JButton(">|");
+        endBtn.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                passSlider.setValue(9);
+                jumpPass(8);
+            }
+        });
 
         mediaPanel.add(startBtn);
-        mediaPanel.add(rewindBtn);
         mediaPanel.add(playBtn);
-        mediaPanel.add(fastForwardBtn);
         mediaPanel.add(endBtn);
 
         passSlider = new JSlider();
@@ -313,6 +339,8 @@ public class QuickSort extends JFrame {
         isY1Done = false;
         isY2Done = false;
         isXDone = false;
+
+        isAnimationPlaying = false;
 
         arrX = new int[10];
         for (int i = 0; i < 10; i++) {
@@ -364,6 +392,48 @@ public class QuickSort extends JFrame {
         }
     }
 
+    private void jumpPass(int a) {
+        speedSlider.setValue(0);
+        animIndex = -1;
+        pass = a;
+        INDEX = 0;
+        JNDEX = 0;
+        pivotIndex = 0;
+        swapIterator = 0;
+        clrA = new Color(102,102,255);
+        clrB = new Color(255,102,102);
+        isPivotSwap = false;
+        isPivotSwapping = false;
+        isSwap = false;
+        isSwapDone = false;
+        isY1Done = false;
+        isY2Done = false;
+        isXDone = false;
+
+        compareLabel.setText("-");
+        pivotLabel.setText("-");
+        passLabel.setText("-");
+
+        Anim anim = animList.get(pass);
+
+        Item[] v = new Item[10];
+        for (int i = 0; i < 10; i++) {
+            v[i] = anim.getPasses()[i];
+        }
+
+        for (int i = 0; i < 10; i++) {
+            arrLabel[i].setText(v[i].getValue() + "");
+            int len = arrLabel[i].getText().length();
+            arrLabel[i].setFont(new Font("Dialog", 1, 20-len));
+            arrLabel[i].setHorizontalAlignment(SwingConstants.CENTER);
+            arrLabel[i].setBorder(BorderFactory.createLineBorder(new Color(0,0,0)));
+            arrLabel[i].setBackground(new Color(152, 152, 152));
+            arrLabel[i].setForeground(new Color(0, 0, 0));
+            arrLabel[i].setOpaque(true);
+            arrLabel[i].setBounds(55+(70*i), 110, 70, 100);
+        }
+    }
+
     /**
      * This function uses Hoare's partition scheme.
      * @param arr array to be partitioned
@@ -372,6 +442,7 @@ public class QuickSort extends JFrame {
      * @return the partitioning index
      */
     private int partition(Item[] arr, int low, int high) {
+        animList.get(animIndex).addPasses(arr);
         int pi = low+(high-low)/2;
         int pivot = arr[pi].getValue();
         int i = low - 1, j = high + 1;
@@ -419,12 +490,14 @@ public class QuickSort extends JFrame {
         if (low < high) {
             animIndex++;
             animList.add(new Anim());
-            animList.get(animIndex).addPasses(this.arr);
+
             System.out.println("\nPASS " + animIndex + " (" + low + "-" + high + ")" + "\n");
             int pi = partition(arr, low, high);
 
+
             quickSort(arr, low, pi);
             quickSort(arr, pi + 1, high);
+
         }
     }
 
@@ -510,6 +583,13 @@ public class QuickSort extends JFrame {
     }
 
     /**
+     * Controls the speed of the animation.
+     */
+    private void passSliderStateChanged() {
+
+    }
+
+    /**
      * Plays or stops the animation.
      * @param evt Used to get the state of the toggle button
      */
@@ -535,6 +615,11 @@ public class QuickSort extends JFrame {
     private void animate() {
         if (pass < animList.size()) {
             passLabel.setText("Pass " + (pass+1));
+
+            isAnimationPlaying = true;
+            passSlider.setValue(pass+1);
+            isAnimationPlaying = false;
+
             Anim anim = animList.get(pass);
             Item pivot = anim.getPivot();
             if (!isPivotSwap)
@@ -702,11 +787,11 @@ public class QuickSort extends JFrame {
         try {
             int min = 0, max = Integer.MAX_VALUE;
 
-            if (!"".equals(minTextField.getText())) {
+            if (!minTextField.getText().isEmpty()) {
                 min = Integer.parseInt(minTextField.getText());
             }
 
-            if (!"".equals(maxTextField.getText())) {
+            if (!maxTextField.getText().isEmpty()) {
                 max = Integer.parseInt(maxTextField.getText());
             }
 
@@ -727,19 +812,18 @@ public class QuickSort extends JFrame {
      * Randomizes the value in the array base on the selected index.
      */
     private void randBtnActionPerformed(int index) {
-        Random rand = new Random();
         int min = 0, max = Integer.MAX_VALUE;
 
-        if (!"".equals(minTextField.getText())) {
+        if (!minTextField.getText().isEmpty()) {
             min = Integer.parseInt(minTextField.getText());
         }
 
-        if (!"".equals(maxTextField.getText())) {
+        if (!maxTextField.getText().isEmpty()) {
             max = Integer.parseInt(maxTextField.getText());
         }
 
-        int value = rand.nextInt((max - min) + 1) + min;
-
+        int value = min + (int)(Math.random() * ((max - min) + 1));
+        value = Math.abs(value);
         arrTextField[index].setText(value + "");
     }
 
@@ -747,18 +831,18 @@ public class QuickSort extends JFrame {
      * Randomizes all the values in the array.
      */
     private void randAllBtnActionPerformed(ActionEvent evt) {
-        Random rand = new Random();
         int min = 0, max = Integer.MAX_VALUE;
 
-        if (!"".equals(minTextField.getText())) {
+        if (!minTextField.getText().isEmpty()) {
             min = Integer.parseInt(minTextField.getText());
         }
 
-        if (!"".equals(maxTextField.getText())) {
+        if (!maxTextField.getText().isEmpty()) {
             max = Integer.parseInt(maxTextField.getText());
         }
         for (int i = 0; i < 10; i++) {
-            int value = rand.nextInt((max - min) + 1) + min;
+            int value = min + (int)(Math.random() * ((max - min) + 1));
+            value = Math.abs(value);
             arrTextField[i].setText(value + "");
         }
     }
@@ -840,8 +924,9 @@ public class QuickSort extends JFrame {
         sorted = new Item[10];
         sorted = copyArray(arr, sorted);
         quickSort(sorted, 0, sorted.length-1);
-        passSlider.setMinimum(0);
+        passSlider.setMinimum(1);
         passSlider.setMaximum(animList.size());
+        passSlider.setValue(1);
         resetAnimation();
     }
 }

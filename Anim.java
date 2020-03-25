@@ -4,7 +4,7 @@ public class Anim {
 
     private Item pivot;
     private ArrayList<Item> i_checks, j_checks;
-    private ArrayList<Item[]> passes;
+    private Item[] passes;
     private ArrayList<ItemPair> swapped;
 
     private int low, high;
@@ -13,7 +13,7 @@ public class Anim {
         pivot = null;
         i_checks = new ArrayList<>();
         j_checks = new ArrayList<>();
-        passes = new ArrayList<>();
+        passes = new Item[10];
         swapped = new ArrayList<>();
     }
 
@@ -34,10 +34,13 @@ public class Anim {
     }
 
     public void addPasses(Item[] arr) {
-        passes.add(arr);
+        for (int i = 0; i < 10; i++) {
+            passes[i] = arr[i];
+        }
+
     }
 
-    public ArrayList<Item[]> getPasses() {
+    public Item[] getPasses() {
         return passes;
     }
 
