@@ -775,9 +775,7 @@ public class QuickSort extends JFrame {
         editBtn.setEnabled(false);
         speedSlider.setEnabled(false);
         startBtn.setEnabled(false);
-        rewindBtn.setEnabled(false);
         playBtn.setEnabled(false);
-        fastForwardBtn.setEnabled(false);
         endBtn.setEnabled(false);
         passSlider.setEnabled(false);
     }
@@ -909,9 +907,9 @@ public class QuickSort extends JFrame {
         editBtn.setEnabled(true);
         speedSlider.setEnabled(true);
         startBtn.setEnabled(true);
-        rewindBtn.setEnabled(true);
+        // rewindBtn.setEnabled(true);
         playBtn.setEnabled(true);
-        fastForwardBtn.setEnabled(true);
+        // fastForwardBtn.setEnabled(true);
         endBtn.setEnabled(true);
         passSlider.setEnabled(true);
     }
